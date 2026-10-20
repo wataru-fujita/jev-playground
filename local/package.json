@@ -7,6 +7,6 @@
     "start:vpn": "powershell -NoProfile -ExecutionPolicy Bypass -File start-vpn.ps1"
   },
   "dependencies": {
-    "@typesafe-ai/sdk": "latest"
+    "@typesafe-ai/sdk": "^0.7.0"
   }
 }

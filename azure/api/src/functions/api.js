@@ -1,6 +1,6 @@
 import { app } from "@azure/functions";
 import {
-  DEVICE_ID_RE, HttpError, ID_RE, expandParams, hfJson, judge, loadDevices, route,
+  DEVICE_ID_RE, HttpError, expandParams, hfJson, judge, loadDevices, route, validModelId,
   structuredQuestions, summarize, textQuestions,
 } from "../lib.js";
 import { PURPOSES } from "../eval.js";
@@ -43,9 +43,9 @@ app.http("judge", {
     const body = await req.json().catch(() => ({}));
     const deviceIds = Array.isArray(body.devices) ? body.devices.slice(0, 12) : [];
     if (
-      typeof body.id !== "string" || !ID_RE.test(body.id) ||
+      !validModelId(body.id) ||
       !["text", "structured"].includes(body.mode) ||
-      !(body.purpose in PURPOSES) ||
+      typeof body.purpose !== "string" || !Object.hasOwn(PURPOSES, body.purpose) ||
       !deviceIds.every((d) => typeof d === "string" && DEVICE_ID_RE.test(d))
     ) {
       throw new HttpError(400, "bad request");

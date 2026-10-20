@@ -5,6 +5,6 @@
   "main": "src/functions/*.js",
   "dependencies": {
     "@azure/functions": "^4.0.0",
-    "@typesafe-ai/sdk": "latest"
+    "@typesafe-ai/sdk": "^0.7.0"
   }
 }

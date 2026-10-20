@@ -130,6 +130,8 @@ function structuredQuestions(devices: Device[]) {
 
 // Questions edited in the browser arrive as plain JSON; check shape and size before use.
 const QID_RE = /^[\w-]{1,40}$/;
+// オブジェクトの内部名は、質問 ID に使わせない(黙って無視されたり、意図しない動きになったりするため)
+const RESERVED_IDS = new Set(["__proto__", "constructor", "prototype"]);
 const str = (v: unknown, max: number) => (typeof v === "string" && v.length <= max ? v : null);
 
 function sanitizeQuestions(raw: unknown) {
@@ -138,7 +140,7 @@ function sanitizeQuestions(raw: unknown) {
   if (entries.length < 1 || entries.length > 14) throw new Error("質問は1〜14個にしてください");
   const out: Record<string, unknown> = {};
   for (const [id, q] of entries) {
-    if (!QID_RE.test(id)) throw new Error(`質問ID「${id}」は英数字・_・- のみ(40文字まで)です`);
+    if (!QID_RE.test(id) || RESERVED_IDS.has(id)) throw new Error(`質問ID「${id}」は英数字・_・- のみ(40文字まで)で、__proto__ などの内部名は使えません`);
     const instructions = str(q?.instructions, 600);
     if (!instructions?.trim()) throw new Error(`「${id}」の質問文が空か長すぎます`);
     if (q.type === "noul") {
@@ -254,10 +256,23 @@ async function readBody(req: import("node:http").IncomingMessage) {
 }
 
 const ID_RE = /^[\w.-]+\/[\w.-]+$/;
+// Hugging Face のモデル ID(owner/name)。「.」や「..」だけの部分は、別のページへ抜けられるので、認めない
+const validModelId = (id: unknown): id is string =>
+  typeof id === "string" && ID_RE.test(id) && id.split("/").every((s) => s !== "." && s !== "..");
 const DEVICE_ID_RE = /^[\w-]+$/;
+
+// 受け付けるホスト名。悪意のある Web サイトが、あなたのブラウザ経由で、このサーバーを呼び出す攻撃(DNS リバインディング)を防ぐ。
+// 通常は localhost / 127.0.0.1。Tailscale 経由で使うときは、環境変数 HOST の値(待ち受ける IP)も許す
+const ALLOWED_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", ...(process.env.HOST ? [process.env.HOST] : [])]);
+const hostOk = (hostHeader: string | undefined) => {
+  if (!hostHeader) return false;
+  const h = hostHeader.startsWith("[") ? hostHeader.slice(0, hostHeader.indexOf("]") + 1) : hostHeader.split(":")[0];
+  return ALLOWED_HOSTS.has(h);
+};
 
 createServer(async (req, res) => {
   try {
+    if (!hostOk(req.headers.host)) return send(res, 403, { error: "forbidden host" });
     const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
     if (req.method === "GET" && url.pathname === "/") {
       return send(res, 200, readFileSync("public/index.html", "utf8"), "text/html");
@@ -280,9 +295,9 @@ createServer(async (req, res) => {
       const body = await readBody(req);
       const deviceIds: string[] = Array.isArray(body.devices) ? body.devices.slice(0, 12) : [];
       if (
-        !ID_RE.test(body.id) ||
+        !validModelId(body.id) ||
         !["text", "structured"].includes(body.mode) ||
-        !(body.purpose in PURPOSES) ||
+        typeof body.purpose !== "string" || !Object.hasOwn(PURPOSES, body.purpose) ||
         !deviceIds.every((d) => DEVICE_ID_RE.test(d))
       ) {
         return send(res, 400, { error: "bad request" });

@@ -157,6 +157,8 @@ export function structuredQuestions(devices) {
 
 // Questions edited in the browser arrive as plain JSON; check shape and size before use.
 const QID_RE = /^[\w-]{1,40}$/;
+// オブジェクトの内部名は、質問 ID に使わせない(黙って無視されたり、意図しない動きになったりするため)
+const RESERVED_IDS = new Set(["__proto__", "constructor", "prototype"]);
 const str = (v, max) => (typeof v === "string" && v.length <= max ? v : null);
 
 export function sanitizeQuestions(raw) {
@@ -165,7 +167,7 @@ export function sanitizeQuestions(raw) {
   if (entries.length < 1 || entries.length > 14) throw new HttpError(400, "質問は1〜14個にしてください");
   const out = {};
   for (const [id, q] of entries) {
-    if (!QID_RE.test(id)) throw new HttpError(400, `質問ID「${id}」は英数字・_・- のみ(40文字まで)です`);
+    if (!QID_RE.test(id) || RESERVED_IDS.has(id)) throw new HttpError(400, `質問ID「${id}」は英数字・_・- のみ(40文字まで)で、__proto__ などの内部名は使えません`);
     const instructions = str(q?.instructions, 600);
     if (!instructions?.trim()) throw new HttpError(400, `「${id}」の質問文が空か長すぎます`);
     if (q.type === "noul") {
@@ -247,6 +249,8 @@ export async function judge(id, mode, deviceIds, purpose, custom, log) {
 }
 
 export const ID_RE = /^[\w.-]+\/[\w.-]+$/;
+// Hugging Face のモデル ID(owner/name)。「.」や「..」だけの部分は、別のページへ抜けられるので、認めない
+export const validModelId = (id) => typeof id === "string" && ID_RE.test(id) && id.split("/").every((s) => s !== "." && s !== "..");
 export const DEVICE_ID_RE = /^[\w-]+$/;
 
 // Wraps a handler: password check, JSON in/out, errors as { error }.
