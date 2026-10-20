@@ -41,7 +41,7 @@ npm install -g @azure/static-web-apps-cli azure-functions-core-tools@4
 npm --prefix api install
 ```
 
-`.env` を用意します(`TYPESAFE_API_KEY` と、`APP_PASSWORD` または `APP_USERS`)。OneDrive などの同期フォルダには置かず、別の場所に作って `JEV_ENV_FILE` で指すのが安全です。
+`.env` を用意します(`TYPESAFE_API_KEY` と、`APP_PASSWORD` または `APP_USERS`)。クラウド同期のフォルダには置かず、別の場所に作って `JEV_ENV_FILE` で指すのが安全です。
 
 ```powershell
 $env:JEV_ENV_FILE = "C:\path\to\.env"

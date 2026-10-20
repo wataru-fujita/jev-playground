@@ -7,7 +7,7 @@ import { PURPOSES, bestDevice, evalDevice, q4SizeGb } from "./public/eval.js";
 // two ways (text only vs. text + structured data) and compare with plain code.
 
 // 環境変数ファイルを読む。JEV_ENV_FILE があればそのファイル、なければ ./.env(どちらもなければ、すでにある環境変数だけを使う)。
-// 同期フォルダ(OneDrive など)の外に、キーのファイルを置けるようにするため。
+// クラウド同期のフォルダの外に、キーのファイルを置けるようにするため。
 const envFile = process.env.JEV_ENV_FILE ?? ".env";
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
