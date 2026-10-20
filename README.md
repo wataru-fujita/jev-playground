@@ -49,8 +49,8 @@ JEV の料金は、公式の models ページで、入力 100 万トークンあ
 
 ## 動かす
 
-- PC で動かす: [`local/`](local/) で `npm install` し、`npm start`(`local/.env` を読みます)。http://localhost:3210 を開く。`.env` を別の場所に置いたときは、`node --env-file=<パス> server.ts`
-- スマホから見る(Tailscale): `npm run start:vpn`(Windows)。サーバーは、Tailscale の IP だけで待ち受けます(`0.0.0.0` では待ち受けません。この画面は API のクレジットを使うため)。`JEV_ENV_FILE` で `.env` の場所を指せます
+- PC で動かす: [`local/`](local/) で `npm install` し、`npm start`(`local/.env` を読みます)。http://localhost:3210 を開く。`.env` を別の場所に置いたときは、環境変数 `JEV_ENV_FILE` にそのファイルのパスを入れておきます
+- スマホから見る(Tailscale): `npm run start:vpn`(Windows)。サーバーは、Tailscale の IP だけで待ち受けます(`0.0.0.0` では待ち受けません。この画面は API のクレジットを使うため)。`.env` の場所は、同じく `JEV_ENV_FILE` で指せます
 - Azure に置く: [`azure/README.md`](azure/README.md)
 
 ## 未検証のこと

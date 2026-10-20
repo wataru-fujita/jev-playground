@@ -6,6 +6,11 @@ import { PURPOSES, bestDevice, evalDevice, q4SizeGb } from "./public/eval.js";
 // JEV playground: pick a Hugging Face model, devices and a purpose, then ask JEV
 // two ways (text only vs. text + structured data) and compare with plain code.
 
+// 環境変数ファイルを読む。JEV_ENV_FILE があればそのファイル、なければ ./.env(どちらもなければ、すでにある環境変数だけを使う)。
+// 同期フォルダ(OneDrive など)の外に、キーのファイルを置けるようにするため。
+const envFile = process.env.JEV_ENV_FILE ?? ".env";
+if (existsSync(envFile)) process.loadEnvFile(envFile);
+
 const PORT = 3210;
 const HF = "https://huggingface.co";
 const INPUT_USD_PER_MTOK = 0.042; // output is free
