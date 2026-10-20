@@ -1,0 +1,8 @@
+{
+  "platform": { "apiRuntime": "node:22" },
+  "globalHeaders": {
+    "cache-control": "no-store",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "no-referrer"
+  }
+}

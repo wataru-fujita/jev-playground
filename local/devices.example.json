@@ -1,0 +1,122 @@
+[
+  {
+    "id": "home-pc",
+    "name": "自作PC(Vega 56)",
+    "default": true,
+    "pools": [
+      {
+        "name": "VRAM(HBM2)",
+        "gb": 8,
+        "bw": 410,
+        "ratio": 1
+      },
+      {
+        "name": "メインメモリ(DDR4)",
+        "gb": 16,
+        "bw": 34,
+        "ratio": 0.75
+      }
+    ],
+    "note": "筆者の自作 PC。VRAM に載らない・メインメモリに溢れて遅い、という判定の挙動を見るための、弱めの端末の例です。自分の PC に書き換えるときは、devices.json を作ってください。メインメモリの帯域は DDR4-2133 のデュアルチャンネルを仮定した推定値です"
+  },
+  {
+    "id": "mac-m5-max",
+    "name": "Apple M5 Max 128GB",
+    "default": true,
+    "pools": [
+      {
+        "name": "ユニファイド",
+        "gb": 128,
+        "bw": 614,
+        "ratio": 0.75
+      }
+    ]
+  },
+  {
+    "id": "mac-m5-ultra",
+    "name": "Apple M5 Ultra 512GB",
+    "pools": [
+      {
+        "name": "ユニファイド",
+        "gb": 512,
+        "bw": 1200,
+        "ratio": 0.75
+      }
+    ]
+  },
+  {
+    "id": "amd-max-395",
+    "name": "AMD Ryzen AI Max+ 395 128GB",
+    "pools": [
+      {
+        "name": "ユニファイド",
+        "gb": 128,
+        "bw": 256,
+        "ratio": 0.75
+      }
+    ]
+  },
+  {
+    "id": "amd-max-400",
+    "name": "AMD Ryzen AI Max 400系 192GB",
+    "pools": [
+      {
+        "name": "ユニファイド",
+        "gb": 192,
+        "bw": 273,
+        "ratio": 0.75
+      }
+    ],
+    "note": "帯域は報道ベース"
+  },
+  {
+    "id": "dgx-spark",
+    "name": "NVIDIA DGX Spark 128GB",
+    "default": true,
+    "pools": [
+      {
+        "name": "ユニファイド",
+        "gb": 128,
+        "bw": 273,
+        "ratio": 0.75
+      }
+    ]
+  },
+  {
+    "id": "rtx-spark",
+    "name": "NVIDIA RTX Spark 128GB",
+    "pools": [
+      {
+        "name": "ユニファイド",
+        "gb": 128,
+        "bw": 300,
+        "ratio": 0.75
+      }
+    ],
+    "note": "帯域300GB/sは開発者向け文書ベース。他の資料には記載なし"
+  },
+  {
+    "id": "rtx-5090",
+    "name": "GeForce RTX 5090 32GB",
+    "pools": [
+      {
+        "name": "VRAM(GDDR7)",
+        "gb": 32,
+        "bw": 1792,
+        "ratio": 1
+      }
+    ]
+  },
+  {
+    "id": "rtx-4090",
+    "name": "GeForce RTX 4090 24GB",
+    "pools": [
+      {
+        "name": "VRAM(GDDR6X)",
+        "gb": 24,
+        "bw": 1008,
+        "ratio": 1
+      }
+    ]
+  }
+]

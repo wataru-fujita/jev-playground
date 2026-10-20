@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JEV 判定ラボ</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #fff; --text: #1d1d1b; --muted: #6b6b66; --line: #e2e2dd;
+    --accent: #2f6f5e; --bar: #2f6f5e; --bar-bg: #e8ece9; --warn: #a15c00; --code-bg: #f0f0ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121413; --panel: #1b1e1c; --text: #ecece8; --muted: #9a9a93; --line: #2d312e;
+      --accent: #6fc2a8; --bar: #6fc2a8; --bar-bg: #2a2f2c; --warn: #e0a24a; --code-bg: #232725;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 system-ui, "Hiragino Sans", "Yu Gothic", sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 12px 0 8px; }
+  p.lead { color: var(--muted); margin: 0 0 16px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 860px) { .grid { grid-template-columns: 340px 1fr; align-items: start; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  input, select, button { font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  input[type=text], input:not([type]) { flex: 1; min-width: 120px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: .5; cursor: wait; }
+  ul.models { list-style: none; margin: 0; padding: 0; max-height: 620px; overflow: auto; }
+  ul.models li { padding: 10px; border: 1px solid transparent; border-bottom-color: var(--line); cursor: pointer; border-radius: 8px; }
+  ul.models li:hover { background: var(--code-bg); }
+  ul.models li.sel { border-color: var(--accent); background: var(--code-bg); }
+  .mid { font-weight: 600; word-break: break-all; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .fit { margin: 8px 0 12px; padding: 10px; background: var(--code-bg); border-radius: 8px; font-size: 14px; }
+  .q { border-top: 1px solid var(--line); padding: 12px 0; }
+  .q .qt { color: var(--muted); font-size: 13px; }
+  .q .ans { font-weight: 700; margin: 2px 0 6px; }
+  .bar { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 2px 0; }
+  .bar .lbl { width: 150px; flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar .track { flex: 1; height: 8px; background: var(--bar-bg); border-radius: 4px; overflow: hidden; }
+  .bar .fill { display: block; height: 100%; background: var(--bar); }
+  .bar .pct { width: 44px; text-align: right; color: var(--muted); }
+  details { margin-top: 10px; }
+  pre { background: var(--code-bg); padding: 10px; border-radius: 8px; overflow: auto; font-size: 12px; max-height: 320px; }
+  .note { color: var(--warn); font-size: 13px; }
+  .err { color: #c0392b; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr.best td { font-weight: 700; }
+  .devs { display: grid; grid-template-columns: 1fr; gap: 2px; margin: 8px 0; font-size: 14px; }
+  @media (min-width: 560px) { .devs { grid-template-columns: 1fr 1fr; } }
+  .devs label { display: flex; gap: 6px; align-items: center; }
+  .devs input { flex: none; padding: 0; }
+  .qe { border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 8px 0; }
+  .qe .top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+  .qe input.id { flex: none; width: 150px; }
+  .qe textarea { width: 100%; font: inherit; font-size: 13px; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; resize: vertical; }
+  .qe label { font-size: 12px; color: var(--muted); display: block; margin-top: 4px; }
+  .small { font-size: 13px; padding: 4px 10px; }
+  .q .qtitle { font-weight: 700; }
+  .q .qdesc { color: var(--muted); font-size: 13px; margin-bottom: 2px; }
+  details.qraw { margin-top: 6px; }
+  details.qraw summary { color: var(--muted); font-size: 12px; cursor: pointer; }
+  .badge { font-size: 12px; border: 1px solid var(--warn); color: var(--warn); border-radius: 99px; padding: 0 8px; margin-left: 6px; font-weight: 400; }
+  .qe .badge { margin-left: 0; }
+  .qe label.cmpl { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--text); margin-top: 8px; }
+  .qe label.cmpl input { flex: none; padding: 0; }
+  .cmp { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 4px; }
+  @media (min-width: 560px) { .cmp { grid-template-columns: 1fr 1fr; } }
+  .cmp > div { border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+  .cmp h4 { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+  .cmp .bar .lbl { width: 90px; }
+  .foot { color: var(--muted); font-size: 13px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>JEV 判定ラボ</h1>
+  <p class="lead">Hugging Face のモデルを選び、用途と手持ちの端末を決めて、JEV に「文章だけ」と「数値データ」の2通りで判定させます。コードの計算結果と見比べる学習用アプリです。</p>
+
+  <div class="grid">
+    <section class="panel">
+      <h2 style="margin-top:0">1. モデルを選ぶ</h2>
+      <div class="row">
+        <input id="q" placeholder="名前で検索(例: qwen, gemma)">
+        <select id="sort">
+          <option value="trending">勢いのある順</option>
+          <option value="downloads">ダウンロード順</option>
+        </select>
+        <button id="go">検索</button>
+      </div>
+      <ul class="models" id="list"><li class="meta">読み込み中…</li></ul>
+    </section>
+
+    <section class="panel" id="detail">
+      <h2 style="margin-top:0">2. 条件を決める</h2>
+      <p class="meta">左でモデルを選んでください。</p>
+    </section>
+  </div>
+
+  <p class="foot" id="foot"></p>
+</main>
+
+<script type="module">
+import { PURPOSES, evalDevice, bestDevice } from "/eval.js";
+
+const $ = (s) => document.querySelector(s);
+const fmt = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "k" : String(n);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let models = [], devices = [], selected = null, totalCost = 0, totalIn = 0, calls = 0;
+let chosen = new Set(), purpose = "chat";
+try {
+  const s = JSON.parse(localStorage.getItem("jev-lab") || "{}");
+  if (s.purpose in PURPOSES) purpose = s.purpose;
+  if (Array.isArray(s.chosen)) chosen = new Set(s.chosen);
+} catch {}
+const save = () => { try { localStorage.setItem("jev-lab", JSON.stringify({ purpose, chosen: [...chosen] })); } catch {} };
+const picked = () => devices.filter((d) => chosen.has(d.id));
+
+async function load() {
+  $("#list").innerHTML = '<li class="meta">読み込み中…</li>';
+  try {
+    const r = await fetch(`/api/models?sort=${$("#sort").value}&q=${encodeURIComponent($("#q").value)}`);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    models = j.models; devices = j.devices;
+    chosen = new Set([...chosen].filter((id) => devices.some((d) => d.id === id)));
+    if (!chosen.size) devices.filter((d) => d.default).forEach((d) => chosen.add(d.id));
+    $("#list").innerHTML = models.length ? "" : '<li class="meta">見つかりませんでした</li>';
+    models.forEach((m, i) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<div class="mid">${esc(m.id)}</div>
+        <div class="meta">DL(30日) ${fmt(m.downloads30d)} ・ ♥ ${fmt(m.likes)} ・ ${m.paramsB ? m.paramsB.toFixed(1) + "B" : "サイズ不明"}</div>`;
+      li.onclick = () => select(i);
+      $("#list").appendChild(li);
+    });
+  } catch (e) {
+    $("#list").innerHTML = `<li class="err">取得に失敗: ${esc(e.message)}</li>`;
+  }
+}
+
+function codeTable(m) {
+  const ds = picked();
+  if (!ds.length) return '<p class="note">端末を1つ以上選んでください。</p>';
+  if (m.paramsB == null) return '<p class="meta">サイズ不明のため、コードでは計算できません(GGUF のみのモデルなど)。</p>';
+  const best = bestDevice(m.paramsB, ds, purpose);
+  const rows = ds.map((d) => {
+    const e = evalDevice(m.paramsB, d, purpose);
+    const verdict = !e.fits ? "載らない" : e.fastEnough ? "◎ 使える" : "△ 遅い";
+    const detail = e.fits ? `${esc(e.pool)} ・ 約 ${e.tps} tok/s(目安 ${e.minTps} 以上)` : `必要 約 ${e.need}GB`;
+    return `<tr class="${best && best.id === d.id ? "best" : ""}"><td>${esc(d.name)}</td><td>${verdict}</td><td class="meta">${detail}</td></tr>`;
+  }).join("");
+  return `<table>${rows}</table>
+    <p class="meta">最速で使える端末: <b>${best ? esc(ds.find((d) => d.id === best.id).name) : "なし"}</b>(4bit 量子化で約 ${(m.paramsB * 0.6).toFixed(1)}GB。速さは帯域÷サイズ×0.5 の目安)</p>`;
+}
+
+function select(i) {
+  selected = models[i];
+  [...$("#list").children].forEach((li, k) => li.classList.toggle("sel", k === i));
+  const m = selected;
+  $("#detail").innerHTML = `
+    <h2 style="margin-top:0">2. 条件を決める</h2>
+    <div class="mid">${esc(m.id)}</div>
+    <div class="meta">作成から ${m.ageDays} 日 ・ 最終更新 ${m.updatedDaysAgo} 日前 ・ DL(累計) ${fmt(m.downloadsAll)}</div>
+    <div class="row" style="margin-top:10px"><label>用途 <select id="purpose">${Object.entries(PURPOSES).map(([k, v]) => `<option value="${k}"${k === purpose ? " selected" : ""}>${esc(v.label)}</option>`).join("")}</select></label></div>
+    <div class="devs">${devices.map((d) => `<label title="${esc(d.note || "")}"><input type="checkbox" data-dev="${esc(d.id)}"${chosen.has(d.id) ? " checked" : ""}> ${esc(d.name)}</label>`).join("")}</div>
+    <div class="fit"><b>コードによる計算(JEV ではない)</b><div id="code">${codeTable(m)}</div></div>
+    <h2>3. 質問を見る・編集する(任意)</h2>
+    <details id="qdetails">
+      <summary>JEV への質問を書き換えて、答えの変化を見る</summary>
+      <div class="row" style="margin-top:8px">
+        <select id="qmode"><option value="text">文章だけ の質問</option><option value="structured">数値データ の質問</option></select>
+        <button class="small" id="qadd">質問を追加</button>
+        <button class="small" id="qreset">初期状態に戻す</button>
+      </div>
+      <p class="meta">書き換えた内容は、そのまま JEV に送られます。質問文は英語が確実です(モデルの想定)。ID は結果の見出しに使うだけで、JEV には送られません。</p>
+      <div id="qlist"></div>
+    </details>
+    <h2>4. JEV に判定させる</h2>
+    <div class="row">
+      <button class="primary" data-mode="text">文章だけで判定</button>
+      <button class="primary" data-mode="structured">数値データで判定</button>
+    </div>
+    <p class="meta"><b>文章だけで判定</b>: モデルの説明文(Hugging Face の README)を JEV に読ませて、用途・日本語対応・宣伝度などを判定させます。数値(ダウンロード数や端末)は渡しません。<br><b>数値データで判定</b>: ダウンロード数・更新日・選んだ端末の容量と帯域などを渡して、普及度・保守状況・どの端末が向くかを判定させます。説明文は渡しません。</p>
+    <div id="out"></div>`;
+  $("#purpose").onchange = (e) => { purpose = e.target.value; save(); $("#code").innerHTML = codeTable(m); };
+  document.querySelectorAll("[data-dev]").forEach((c) => (c.onchange = () => {
+    c.checked ? chosen.add(c.dataset.dev) : chosen.delete(c.dataset.dev);
+    // Untouched device-dependent questions are rebuilt from the new selection.
+    if (!edits.structured?.dirty) edits.structured = null;
+    save(); $("#code").innerHTML = codeTable(m); renderEditor();
+  }));
+  $("#qmode").onchange = renderEditor;
+  $("#qdetails").ontoggle = () => $("#qdetails").open && renderEditor();
+  $("#qadd").onclick = async () => {
+    const ed = await ensureEdit($("#qmode").value);
+    if (!ed) return;
+    let n = 1; while (ed.items.some((q) => q.id === "q" + n)) n++;
+    ed.items.push({ id: "q" + n, type: "noul", instructions: "", choice: "", score: "" });
+    ed.dirty = true; renderEditor();
+  };
+  $("#qreset").onclick = () => { edits[$("#qmode").value] = null; renderEditor(); };
+  document.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => run(b.dataset.mode)));
+}
+
+// ---- question editor: edits[mode] = null (use defaults) or { items, dirty } ----
+const edits = { text: null, structured: null };
+
+function toItems(questions) {
+  return Object.entries(questions).map(([id, q]) => ({
+    id, type: q.type, instructions: typeof q.instructions === "string" ? q.instructions : "",
+    choice: q.type === "choice" ? Object.entries(q.criteria).map(([k, v]) => `${k}: ${v}`).join("\n") : "",
+    score: q.type === "score" ? q.criteria.join("\n") : "",
+  }));
+}
+
+function fromItems(items) {
+  const out = {};
+  for (const it of items) {
+    if (!it.id.trim()) throw new Error("質問 ID が空です");
+    if (it.id in out) throw new Error(`質問 ID「${it.id}」が重複しています`);
+    const q = { type: it.type, instructions: it.instructions };
+    if (it.type === "choice") {
+      q.criteria = {};
+      for (const line of it.choice.split("\n").map((l) => l.trim()).filter(Boolean)) {
+        const k = line.indexOf(":");
+        if (k < 1) throw new Error(`「${it.id}」の選択肢は「名前: 説明」の形で1行ずつ書いてください`);
+        q.criteria[line.slice(0, k).trim()] = line.slice(k + 1).trim();
+      }
+    } else if (it.type === "score") {
+      q.criteria = it.score.split("\n").map((l) => l.trim()).filter(Boolean);
+    }
+    out[it.id] = q;
+  }
+  return out;
+}
+
+// 項目 → 質問(JSON)。形式が不正なら null
+function itemToQ(it) { try { return fromItems([it])[it.id] ?? null; } catch { return null; } }
+
+// 元の質問と中身が違うか(元にない質問は「追加」)
+function badgeText(it, orig) {
+  if (!orig?.[it.id]) return "追加した質問";
+  const q = itemToQ(it);
+  return !q || !sameQ(orig[it.id], q) ? "編集済み" : "";
+}
+
+async function ensureEdit(mode) {
+  if (edits[mode]) return edits[mode];
+  try {
+    const r = await apiFetch(`/api/questions?mode=${mode}&devices=${[...chosen].join(",")}`);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    // orig = 初期の質問。書き換えの判定と、元の質問との比較に使う
+    edits[mode] = { items: toItems(j.questions), dirty: false, orig: j.questions };
+  } catch (e) {
+    $("#qlist").innerHTML = `<p class="err">質問の取得に失敗: ${esc(e.message)}</p>`;
+    return null;
+  }
+  return edits[mode];
+}
+
+async function renderEditor() {
+  if (!$("#qdetails")?.open) return;
+  const mode = $("#qmode").value;
+  const ed = await ensureEdit(mode);
+  if (!ed) return;
+  $("#qlist").innerHTML = ed.items.map((it, i) => {
+    const bt = badgeText(it, ed.orig);
+    return `
+    <div class="qe" data-i="${i}">
+      <div class="top">
+        <input class="id" data-f="id" value="${esc(it.id)}" aria-label="質問ID">
+        <select data-f="type"><option value="noul"${it.type === "noul" ? " selected" : ""}>noul(Yes/No の確率)</option><option value="choice"${it.type === "choice" ? " selected" : ""}>choice(選ぶ)</option><option value="score"${it.type === "score" ? " selected" : ""}>score(程度)</option></select>
+        <span class="badge ebadge"${bt ? "" : " hidden"}>${esc(bt || "編集済み")}</span>
+        <button class="small" data-del="${i}">削除</button>
+      </div>
+      <textarea data-f="instructions" rows="3" aria-label="質問文">${esc(it.instructions)}</textarea>
+      ${it.type === "choice" ? `<label>選択肢(1行に1つ。「名前: 説明」)</label><textarea data-f="choice" rows="${Math.min(8, it.choice.split("\n").length + 1)}">${esc(it.choice)}</textarea>` : ""}
+      ${it.type === "score" ? `<label>段階(1行に1つ。上から 0, 1, 2…)</label><textarea data-f="score" rows="${Math.min(8, it.score.split("\n").length + 1)}">${esc(it.score)}</textarea>` : ""}
+      ${ed.orig[it.id] ? `<label class="cmpl"><input type="checkbox" data-f="compare"${it.compare ? " checked" : ""}> 元の質問も同時に送って、答えを並べて比べる(書き換えたときだけ有効)</label>` : ""}
+    </div>`;
+  }).join("") + `<p class="meta">${ed.dirty ? "編集済み。この内容で判定されます。" : "初期状態です。編集すると、その内容で判定されます。"}「元の質問と比べる」にチェックすると、元の質問と書き換えた質問の答えが横に並びます(質問が増える分、入力トークンも増えます)。</p>`;
+  document.querySelectorAll("#qlist [data-f]").forEach((el) => {
+    el.oninput = () => {
+      const card = el.closest(".qe");
+      const it = ed.items[+card.dataset.i];
+      it[el.dataset.f] = el.type === "checkbox" ? el.checked : el.value;
+      ed.dirty = true;
+      if (el.dataset.f === "type") {
+        if (it.type === "choice" && !it.choice) it.choice = "yes: The answer is yes\nno: The answer is no";
+        if (it.type === "score" && !it.score) it.score = "Low\nMedium\nHigh";
+        renderEditor();
+        return;
+      }
+      const b = card.querySelector(".ebadge");
+      const t = badgeText(it, ed.orig);
+      b.hidden = !t;
+      if (t) b.textContent = t;
+    };
+  });
+  document.querySelectorAll("#qlist [data-del]").forEach((b) => (b.onclick = () => { ed.items.splice(+b.dataset.del, 1); ed.dirty = true; renderEditor(); }));
+}
+
+function bars(items) {
+  return items.map(([label, p]) =>
+    `<div class="bar"><span class="lbl" title="${esc(label)}">${esc(label)}</span>
+     <span class="track"><span class="fill" style="width:${(p * 100).toFixed(1)}%"></span></span>
+     <span class="pct">${(p * 100).toFixed(0)}%</span></div>`).join("");
+}
+
+const devName = (id) => devices.find((d) => d.id === id)?.name ?? (id === "none" ? "どれも向かない" : id);
+
+// 日本語のタイトルと説明(初期の質問だけ。質問を書き換えた場合は、下の「送った質問文」が実際の質問です)
+const LABELS = {
+  usecase: ["主な用途", "モデルの説明文を読んで、会話・コード・画像・検索のどれ向けのモデルかを選びます。"],
+  suits_purpose: ["選んだ用途に向くか", "説明文の内容が、上で選んだ用途(チャットなど)に合っているかの確率です。"],
+  japanese: ["日本語に対応しているか", "説明文が日本語への対応に触れているかの確率です。書かれていなければ低くなります。"],
+  hype: ["説明文の宣伝度", "説明文が、事実の記述中心か、誇張した宣伝調かを、3 段階で見ます。"],
+  adoption: ["普及度", "ダウンロード数といいね数を、公開からの日数と比べた、使われ具合を 4 段階で見ます。"],
+  maintained: ["保守されているか", "最終更新の日付から、今も手が入っているモデルかの確率です。"],
+  momentum: ["注目の勢い", "累計と直近 30 日のダウンロード数を比べて、増加中・横ばい・減少中のどれかを選びます。"],
+  best_device: ["最適な端末", "選んだ端末のうち、この用途でいちばん向く端末を JEV が選びます。下のコードの計算と比べます。"],
+};
+const CHOICE_JA = {
+  usecase: { chat: "会話", coding: "コード", vision: "画像", embedding: "検索・埋め込み", other: "その他・不明" },
+  momentum: { rising: "増加中", steady: "横ばい", fading: "減少中", unclear: "判断できない" },
+};
+const LEVEL_JA = {
+  hype: ["事実の記述が中心", "事実と主張が半々", "誇張した宣伝調"],
+  adoption: ["ほぼ使われていない", "限られた人が使う", "よく使われている", "広く普及している"],
+};
+
+function labelFor(name) {
+  if (name.startsWith("runs_")) {
+    return [`${devName(name.slice(5))} で動かせるか`, "4bit 量子化でメモリに載り、選んだ用途に十分な速さが出るかの確率です。コードの計算と並べて比べます。"];
+  }
+  return LABELS[name] ?? [name, ""];
+}
+
+// 1 つの答えの見出しと棒グラフ(元の質問・編集後のどちらにも使う)
+function answerParts(name, a) {
+  const isBest = name === "best_device";
+  const choiceJa = (k) => (isBest ? devName(k) : CHOICE_JA[name]?.[k] ?? k);
+  let head = "", body = "";
+  if (a.type === "choice") {
+    head = `${esc(choiceJa(a.choice))} <span class="meta">(確信度 ${a.confidence.toFixed(2)})</span>`;
+    body = bars(Object.entries(a.probabilities).map(([k, p]) => [choiceJa(k), p]));
+  } else if (a.type === "score") {
+    const ja = LEVEL_JA[name];
+    const levelText = (k) => (ja && ja.length === Object.keys(a.legend).length ? ja[k] : a.legend[k]);
+    head = `スコア ${a.score.toFixed(2)} <span class="meta">(確信度 ${a.confidence.toFixed(2)})</span>`;
+    body = bars(Object.entries(a.probabilities).map(([k, p]) => [`${k}: ${levelText(k)}`, p]));
+  } else {
+    head = `Yes の確率 ${(a.noul * 100).toFixed(0)}%`;
+    body = bars([["Yes", a.noul], ["No", 1 - a.noul]]);
+    if (a.noul > 0.35 && a.noul < 0.65) head += ' <span class="note">(0.5 付近 = どちらとも言えない)</span>';
+  }
+  return { head, body };
+}
+
+const normQ = (q) => JSON.stringify({ type: q.type, instructions: q.instructions ?? "", criteria: q.criteria ?? null });
+const sameQ = (a, b) => normQ(a) === normQ(b);
+
+// state: "same"(初期のまま) / "edited"(書き換え) / "added"(追加)。orig: 比較するときだけ { q, a }
+function renderAnswer(name, q, a, state, orig) {
+  const text = typeof q.instructions === "string" ? q.instructions : "";
+  const [title, desc] = labelFor(name);
+  const badge = state === "edited" ? ' <span class="badge">編集済み</span>' : state === "added" ? ' <span class="badge">追加した質問</span>' : "";
+  const descHtml = state === "same"
+    ? (desc ? `<div class="qdesc">${esc(desc)}</div>` : "")
+    : '<div class="qdesc">この質問は書き換え(または追加)されています。実際の質問文は、下の「JEV に送った質問文」で確認してください。</div>';
+  const p = answerParts(name, a);
+  let main = `<div class="ans">${p.head}</div>${p.body}`;
+  let raw = `<div class="qt">${esc(text)}</div>`;
+  if (orig) {
+    const po = answerParts(name, orig.a);
+    main = `<div class="cmp"><div><h4>元の質問</h4><div class="ans">${po.head}</div>${po.body}</div><div><h4>編集後</h4><div class="ans">${p.head}</div>${p.body}</div></div>`;
+    raw = `<div class="qt">元: ${esc(orig.q.instructions ?? "")}</div><div class="qt">編集後: ${esc(text)}</div>`;
+  }
+  return `<div class="q"><div class="qtitle">${esc(title)}${badge}</div>${descHtml}${main}<details class="qraw"><summary>JEV に送った質問文(${esc(name)}・${a.type})</summary>${raw}</details></div>`;
+}
+
+function compare(j) {
+  const rows = j.code.map((c) => {
+    const p = j.answers["runs_" + c.id]?.noul;
+    if (p === undefined) return "";
+    const codeYes = c.known && c.fits && c.fastEnough;
+    const agree = c.known ? (p >= 0.5) === codeYes : null;
+    const mark = agree === null ? "—" : agree ? "一致" : '<span class="note">不一致</span>';
+    return `<tr><td>${esc(c.name)}</td><td>JEV ${(p * 100).toFixed(0)}%</td><td>コード ${!c.known ? "計算不可" : codeYes ? "使える" : "使えない"}</td><td>${mark}</td></tr>`;
+  }).join("");
+  const jb = j.answers.best_device?.choice;
+  const cb = j.codeBest?.id ?? "none";
+  const same = jb === cb;
+  if (!rows && !jb) return "";
+  return `<div class="fit"><b>JEV とコードの比較</b><table>${rows}</table>
+    ${jb === undefined ? "" : `<p>最適な端末 — JEV: <b>${esc(devName(jb))}</b> ／ コード(最速): <b>${esc(devName(cb))}</b> ${same ? "(一致)" : '<span class="note">(不一致。計算できる事実はコードに任せる方が確実です)</span>'}</p>`}</div>`;
+}
+
+async function run(mode) {
+  const out = $("#out");
+  document.querySelectorAll("[data-mode]").forEach((b) => (b.disabled = true));
+  out.innerHTML = '<p class="meta">JEV に問い合わせ中…</p>';
+  try {
+    // Only send questions when the user has changed them; otherwise the server uses its defaults.
+    const ed = edits[mode];
+    let custom;
+    if (ed?.dirty) {
+      custom = fromItems(ed.items);
+      // 比較にチェックした質問は、元の質問も「<ID>__orig」として同時に送る
+      for (const it of ed.items) {
+        if (it.compare && ed.orig[it.id] && it.id.length <= 33 && badgeText(it, ed.orig) === "編集済み") custom[it.id + "__orig"] = ed.orig[it.id];
+      }
+    }
+    const r = await fetch("/api/judge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: selected.id, mode, purpose, devices: [...chosen], questions: custom }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    calls++; totalCost += j.costUsd; totalIn += j.usage?.input_tokens ?? 0;
+    let html = `<h2>${mode === "text" ? "文章だけ" : "数値データ"}の判定結果(用途: ${esc(PURPOSES[purpose].label)})</h2>`;
+    if (mode === "structured") html += compare(j);
+    for (const [name, q] of Object.entries(j.questions)) {
+      if (name.endsWith("__orig") || !j.answers[name]) continue;
+      const o = ed?.orig?.[name];
+      const state = !ed?.dirty ? "same" : !o ? "added" : sameQ(o, q) ? "same" : "edited";
+      const oa = j.answers[name + "__orig"];
+      html += renderAnswer(name, q, j.answers[name], state, oa ? { q: j.questions[name + "__orig"], a: oa } : null);
+    }
+    html += `<p class="meta">${esc(j.jevModel)} ・ 質問 ${Object.keys(j.questions).length} 個 ・ 入力 ${j.usage?.input_tokens ?? "?"} トークン ・ ${j.ms} ms ・ 約 $${j.costUsd.toFixed(6)}</p>`;
+    html += `<details><summary>JEV に送った内容を見る(state と questions)</summary><pre>${esc(JSON.stringify({ state: j.state, questions: j.questions }, null, 2))}</pre></details>`;
+    out.innerHTML = html;
+    $("#foot").textContent = `このセッション: ${calls} 回 ・ 入力 ${totalIn} トークン ・ 約 $${totalCost.toFixed(5)}`;
+  } catch (e) {
+    out.innerHTML = `<p class="err">失敗: ${esc(e.message)}</p>`;
+  } finally {
+    document.querySelectorAll("[data-mode]").forEach((b) => (b.disabled = false));
+  }
+}
+
+$("#go").onclick = load;
+$("#q").addEventListener("keydown", (e) => e.key === "Enter" && load());
+$("#sort").onchange = load;
+load();
+</script>
+</body>
+</html>

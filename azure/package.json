@@ -1,0 +1,8 @@
+{
+  "name": "jev-swa",
+  "private": true,
+  "scripts": {
+    "sync": "node -e \"require('fs').copyFileSync('app/eval.js','api/src/eval.js')\"",
+    "install:api": "npm --prefix api install"
+  }
+}

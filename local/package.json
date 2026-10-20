@@ -1,0 +1,12 @@
+{
+  "name": "jev-playground-local",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.ts",
+    "start:vpn": "powershell -NoProfile -ExecutionPolicy Bypass -File start-vpn.ps1"
+  },
+  "dependencies": {
+    "@typesafe-ai/sdk": "latest"
+  }
+}
